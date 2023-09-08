@@ -16,21 +16,20 @@ width_mult: 1.0
 num_classes: 1
 TrainDataset:
   !COCODataSet
-    image_dir: ""
-    anno_path: annotations/train.json
-    dataset_dir: dataset/crowdhuman
-    data_fields: ['image', 'gt_bbox', 'gt_class', 'is_crowd']
+    image_dir: train
+    anno_path: train.json
+    dataset_dir: /home/gabriel/data/lrv
 
 EvalDataset:
   !COCODataSet
-    image_dir: ""
-    anno_path: annotations/val.json
-    dataset_dir: dataset/crowdhuman
+    image_dir: test
+    anno_path: test.json
+    dataset_dir: /home/gabriel/data/lrv
 
 TestDataset:
   !ImageFolder
-    anno_path: annotations/val.json
-    dataset_dir: dataset/crowdhuman
+    anno_path: test.json
+    dataset_dir: /home/gabriel/data/lrv
 
 TrainReader:
   batch_size: 8

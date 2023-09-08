@@ -141,7 +141,7 @@ if __name__ == '__main__':
     # load image list
     img_list = get_test_images(FLAGS.image_dir, FLAGS.image_file)
     # load predictor
-    predictor = InferenceSession(FLAGS.onnx_file)
+    predictor = InferenceSession(FLAGS.onnx_file, providers=['CUDAExecutionProvider'])
     # load infer config
     infer_config = PredictConfig(FLAGS.infer_cfg)
 
