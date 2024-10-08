@@ -9,8 +9,8 @@ DET:
   batch_size: 1
 
 MOT:
-  model_dir: deploy/pipeline/models/ppyoloe_plus_crn_t_auxhead_320_60e_pphuman_1
-  tracker_config: deploy/pipeline/config/tracker_config.yml
+  model_dir: /home/kodifly/PaddleDetection/deploy/pipeline/models/ppyoloe_plus_crn_t_auxhead_320_60e_pphuman_1
+  tracker_config: /home/kodifly/PaddleDetection/deploy/pipeline/config/tracker_config.yml
   batch_size: 1
   skip_frame_num: 2 # preferably no more than 3
   enable: True

@@ -882,7 +882,7 @@ class PipePredictor(object):
                             
                             # if self.file_name is None:  # use camera_id
          
-                            cv2.imshow('Paddle-Pipeline', im)
+                            cv2.imshow(f'{self.camera_label}', im)
                             if cv2.waitKey(1) & 0xFF == ord('q'):
                                 break
                     if self.enable_write_video:
@@ -1158,7 +1158,7 @@ class PipePredictor(object):
                     # writer.write(im)
                     # if self.file_name is None:  # use camera_id
  
-                    cv2.imshow('Paddle-Pipeline', im)
+                    cv2.imshow(f'{self.camera_label}', im)
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         break
             if self.enable_write_video:

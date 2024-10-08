@@ -271,7 +271,7 @@ def flow_statistic(result,
             center_x = x1 + w / 2.
             center_y = y1 + h / 2.
             if track_id in prev_center:
-                print("entrance:",entrance)
+                # print("entrance:",entrance)
                 if region_type == 'horizontal':
                     # horizontal center line
                     if prev_center[track_id][1] <= entrance_y and \
@@ -288,13 +288,13 @@ def flow_statistic(result,
                     p1 = entrance[0]
                     p2 = entrance[1]
                     
-                    print("IN FLOW LOGIC")
-                    print(f"prev: {prev_center[track_id]}")
-                    print(f"curr {center_x},{center_y}")
+                    # print("IN FLOW LOGIC")
+                    # print(f"prev: {prev_center[track_id]}")
+                    # print(f"curr {center_x},{center_y}")
 
                     # First check if current center is within the x bounds 
                     if not (min(p1[0],p2[0])  < center_x  < max(p1[0],p2[0])):
-                        print("NOT INSIDE X lIne")
+                        # print("NOT INSIDE X lIne")
                         break
 
                     prev_x, prev_y = prev_center[track_id][0],prev_center[track_id][1]
