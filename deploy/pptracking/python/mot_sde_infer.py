@@ -105,7 +105,8 @@ class SDE_Detector(Detector):
                  region_type='horizontal',
                  region_polygon=[],
                  reid_model_dir=None,
-                 mtmct_dir=None):
+                 mtmct_dir=None,
+                 dla_core=0):
         super(SDE_Detector, self).__init__(
             model_dir=model_dir,
             device=device,
@@ -118,7 +119,8 @@ class SDE_Detector(Detector):
             cpu_threads=cpu_threads,
             enable_mkldnn=enable_mkldnn,
             output_dir=output_dir,
-            threshold=threshold, )
+            threshold=threshold,
+            dla_core=dla_core)
         self.save_images = save_images
         self.save_mot_txts = save_mot_txts
         self.draw_center_traj = draw_center_traj
@@ -129,6 +131,8 @@ class SDE_Detector(Detector):
         self.do_break_in_counting = do_break_in_counting
         self.region_type = region_type
         self.region_polygon = region_polygon
+        self.dla_core = dla_core
+        print(f"inside SDE det dla {self.dla_core}")
         if self.region_type == 'custom':
             assert len(
                 self.region_polygon
@@ -156,7 +160,8 @@ class SDE_Detector(Detector):
                 trt_opt_shape=trt_opt_shape,
                 trt_calib_mode=trt_calib_mode,
                 cpu_threads=cpu_threads,
-                enable_mkldnn=enable_mkldnn)
+                enable_mkldnn=enable_mkldnn,
+                dla_core=self.dla_core)
         else:
             self.reid_pred_config = None
             self.reid_predictor = None
@@ -599,6 +604,7 @@ class SDE_Detector(Detector):
                 save_dir = os.path.join(self.output_dir, seq_name)
                 if not os.path.exists(save_dir):
                     os.makedirs(save_dir)
+                    print("SAVING???")
                 cv2.imwrite(
                     os.path.join(save_dir, '{:05d}.jpg'.format(frame_id)), im)
 

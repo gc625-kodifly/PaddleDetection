@@ -169,7 +169,16 @@ def argsparser():
         "--draw_center_traj",
         action='store_true',
         help="Whether drawing the trajectory of center")
-
+    parser.add_argument(
+        "--dla_core",
+        type=int,
+        default=0,
+        help="core for dla")
+    parser.add_argument(
+        "--camera_label",
+        type=str,
+        default="",
+        help="camera name for backend")
     return parser
 
 

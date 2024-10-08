@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import sklearn
 import os
 import yaml
 import glob
@@ -82,6 +82,7 @@ class Pipeline(object):
         self.is_video = False
         self.output_dir = args.output_dir
         self.vis_result = cfg['visual']
+        print(f"arg rtsp: {args.rtsp}")
         self.input = self._parse_input(args.image_file, args.image_dir,
                                        args.video_file, args.video_dir,
                                        args.camera_id, args.rtsp)
@@ -102,7 +103,7 @@ class Pipeline(object):
                      camera_id, rtsp):
 
         # parse input as is_video and multi_camera
-
+        # print("in parse input")
         if image_file is not None or image_dir is not None:
             input = get_test_images(image_dir, image_file)
             self.is_video = False
@@ -135,12 +136,13 @@ class Pipeline(object):
                 self.multi_camera = False
                 input = rtsp[0]
             self.is_video = True
-
+            # self.camera_id = camera_id
+            # print(f"setting camera_id to {camera_id} for backend")
         elif camera_id != -1:
             self.multi_camera = False
             input = camera_id
             self.is_video = True
-
+            # self.camera_id = camera_id
         else:
             raise ValueError(
                 "Illegal Input, please set one of ['video_file', 'camera_id', 'image_file', 'image_dir']"
@@ -263,6 +265,7 @@ class PipePredictor(object):
 
     def __init__(self, args, cfg, is_video=True, multi_camera=False):
         # general module for pphuman and ppvehicle
+        
         self.with_mot = cfg.get('MOT', False)['enable'] if cfg.get(
             'MOT', False) else False
         self.with_human_attr = cfg.get('ATTR', False)['enable'] if cfg.get(
@@ -348,7 +351,7 @@ class PipePredictor(object):
         self.is_video = is_video
         self.multi_camera = multi_camera
         self.cfg = cfg
-
+        print(f"CFG VISUAL?? {self.cfg['visual']}")
         self.output_dir = args.output_dir
         self.draw_center_traj = args.draw_center_traj
         self.secs_interval = args.secs_interval
@@ -357,7 +360,10 @@ class PipePredictor(object):
         self.region_type = args.region_type
         self.region_polygon = args.region_polygon
         self.illegal_parking_time = args.illegal_parking_time
-
+        
+        
+        self.camera_label = args.camera_label
+        
         self.warmup_frame = self.cfg['warmup_frame']
         self.pipeline_res = Result()
         self.pipe_timer = PipeTimer()
@@ -401,7 +407,7 @@ class PipePredictor(object):
                 laneseg_cfg['lane_seg_config'], laneseg_cfg['model_dir'])
 
         if not is_video:
-
+            print("PIPE_PREDICTOR NOT IS_VIDEO")
             det_cfg = self.cfg['DET']
             model_dir = det_cfg['model_dir']
             batch_size = det_cfg['batch_size']
@@ -480,6 +486,7 @@ class PipePredictor(object):
 
             if self.with_mot or self.modebase["idbased"] or self.modebase[
                     "skeletonbased"]:
+                print("PIPE_PREDICTOR IS_VIDEO in MOT")
                 mot_cfg = self.cfg['MOT']
                 model_dir = mot_cfg['model_dir']
                 tracker_config = mot_cfg['tracker_config']
@@ -487,6 +494,7 @@ class PipePredictor(object):
                 skip_frame_num = mot_cfg.get('skip_frame_num', -1)
                 basemode = self.basemode['MOT']
                 self.modebase[basemode] = True
+                print(f"dla core arg {args.dla_core}")
                 self.mot_predictor = SDE_Detector(
                     model_dir,
                     tracker_config,
@@ -505,7 +513,8 @@ class PipePredictor(object):
                     do_entrance_counting=self.do_entrance_counting,
                     do_break_in_counting=self.do_break_in_counting,
                     region_type=self.region_type,
-                    region_polygon=self.region_polygon)
+                    region_polygon=self.region_polygon,
+                    dla_core=args.dla_core)
 
             if self.with_video_action:
                 video_action_cfg = self.cfg['VIDEO_ACTION']
@@ -513,7 +522,8 @@ class PipePredictor(object):
                 self.modebase[basemode] = True
                 self.video_action_predictor = VideoActionRecognizer.init_with_cfg(
                     args, video_action_cfg)
-
+        self.max_frequency = 30
+        self.period = 1 / self.max_frequency
     def set_file_name(self, path):
         if type(path) == int:
             self.file_name = path
@@ -553,10 +563,12 @@ class PipePredictor(object):
                 self.pipe_timer.total_time.start()
                 self.pipe_timer.module_time['det'].start()
             # det output format: class, score, xmin, ymin, xmax, ymax
+            det_t = time.time()
             det_res = self.det_predictor.predict_image(
                 batch_input, visual=False)
             det_res = self.det_predictor.filter_box(det_res,
                                                     self.cfg['crop_thresh'])
+            print(f"det time and freq {time.time()-det_t},{1/(time.time()-det_t)} ")
             if i > self.warmup_frame:
                 self.pipe_timer.module_time['det'].end()
                 self.pipe_timer.track_num += len(det_res['boxes'])
@@ -639,20 +651,37 @@ class PipePredictor(object):
 
     def capturevideo(self, capture, queue):
         frame_id = 0
+        
+
         while (1):
-            if queue.full():
-                time.sleep(0.1)
+            if 0:
+            # if queue.full():
+                time.sleep(0.005)
+                
             else:
                 ret, frame = capture.read()
                 if not ret:
                     return
-                frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                # frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                frame_rgb = cv2.cvtColor(frame, cv2.COLOR_YUV2RGB_UYVY)
                 queue.put(frame_rgb)
 
     def predict_video(self, video_file, thread_idx=0):
         # mot
         # mot -> attr
         # mot -> pose -> action
+        pipeline = (
+        
+        "v4l2src device=/dev/video2 ! "
+        "video/x-raw, format=UYVY, width=3840, height=2160, framerate=30/1, "
+        # "video/x-raw, format=UYVY, width=1920, height=1080, framerate=30/1, "
+        "colorimetry=2:4:7:1, interlace-mode=progressive ! "
+        # "videoconvert ! "
+        # "video/x-raw, format=BGR ! "
+        "appsink sync=0 drop=1"
+        )
+        
+        print(f" p: {video_file}")
         capture = cv2.VideoCapture(video_file)
 
         # Get Video info : resolution, fps, frame count
@@ -661,7 +690,7 @@ class PipePredictor(object):
         fps = int(capture.get(cv2.CAP_PROP_FPS))
         frame_count = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
         print("video fps: %d, frame_count: %d" % (fps, frame_count))
-
+        print(f'w {width} h {height}')
         if len(self.pushurl) > 0:
             video_out_name = 'output' if self.file_name is None else self.file_name
             pushurl = os.path.join(self.pushurl, video_out_name)
@@ -727,14 +756,19 @@ class PipePredictor(object):
         illegal_parking_dict = None
         cars_count = 0
         retrograde_traj_len = 0
-        framequeue = queue.Queue(10)
-
+        framequeue = queue.Queue(maxsize=1)
+        
         thread = threading.Thread(
             target=self.capturevideo, args=(capture, framequeue))
         thread.start()
         time.sleep(1)
 
-        while (not framequeue.empty()):
+        # print((framequeue.qsize()))
+        
+        # while (not framequeue.empty()):
+        while True:
+            start_time = time.time()
+            # print("q",(framequeue.qsize()))
             if frame_id % 10 == 0:
                 print('Thread: {}; frame id: {}'.format(thread_idx, frame_id))
 
@@ -750,14 +784,19 @@ class PipePredictor(object):
                 reuse_det_result = False
                 if mot_skip_frame_num > 1 and frame_id > 0 and frame_id % mot_skip_frame_num > 0:
                     reuse_det_result = True
+                # det_t = time.time()
                 res = self.mot_predictor.predict_image(
                     [copy.deepcopy(frame_rgb)],
                     visual=False,
                     reuse_det_result=reuse_det_result,
                     frame_count=frame_id)
-
+                # print(f"det t and f {time.time()-det_t}, {1/(time.time()-det_t)}")
                 # mot output format: id, class, score, xmin, ymin, xmax, ymax
+                # mot_t = time.time()
                 mot_res = parse_mot_res(res)
+                # print(f"mot t and f {time.time()-mot_t}, {1/(time.time()-mot_t)}")
+                
+                
                 if frame_id > self.warmup_frame:
                     self.pipe_timer.module_time['mot'].end()
                     self.pipe_timer.track_num += len(mot_res['boxes'])
@@ -770,6 +809,7 @@ class PipePredictor(object):
                 boxes, scores, ids = res[0]  # batch size = 1 in MOT
                 mot_result = (frame_id + 1, boxes[0], scores[0],
                               ids[0])  # single class
+                # flow_t = time.time()
                 statistic = flow_statistic(
                     mot_result,
                     self.secs_interval,
@@ -784,9 +824,11 @@ class PipePredictor(object):
                     out_id_list,
                     prev_center,
                     records,
-                    ids2names=self.mot_predictor.pred_config.labels)
+                    ids2names=self.mot_predictor.pred_config.labels,
+                    camera_id=self.camera_label)
                 records = statistic['records']
 
+                # print(f"flow time {(time.time()-flow_t)}, {1/(time.time()-flow_t)}")
                 if self.illegal_parking_time != -1:
                     object_in_region_info, illegal_parking_dict = update_object_info(
                         object_in_region_info, mot_result, self.region_type,
@@ -811,11 +853,12 @@ class PipePredictor(object):
                         if len(self.pushurl) > 0:
                             pushstream.pipe.stdin.write(im.tobytes())
                         else:
-                            writer.write(im)
-                            if self.file_name is None:  # use camera_id
-                                cv2.imshow('Paddle-Pipeline', im)
-                                if cv2.waitKey(1) & 0xFF == ord('q'):
-                                    break
+                            # writer.write(im)
+                            # if self.file_name is None:  # use camera_id
+         
+                            cv2.imshow('Paddle-Pipeline', im)
+                            if cv2.waitKey(1) & 0xFF == ord('q'):
+                                break
                     continue
 
                 self.pipeline_res.update(mot_res, 'mot')
@@ -1083,12 +1126,18 @@ class PipePredictor(object):
                 if len(self.pushurl) > 0:
                     pushstream.pipe.stdin.write(im.tobytes())
                 else:
-                    writer.write(im)
-                    if self.file_name is None:  # use camera_id
-                        cv2.imshow('Paddle-Pipeline', im)
-                        if cv2.waitKey(1) & 0xFF == ord('q'):
-                            break
-
+                    # writer.write(im)
+                    # if self.file_name is None:  # use camera_id
+ 
+                    cv2.imshow('Paddle-Pipeline', im)
+                    if cv2.waitKey(1) & 0xFF == ord('q'):
+                        break
+            
+            elapsed_time = time.time() - start_time
+            sleep_time = max(0,self.period-elapsed_time)
+            # print("sleeptime",sleep_time)
+            print(f"LOOP FPS: {1/elapsed_time}")
+            time.sleep(sleep_time)
         if self.cfg['visual'] and len(self.pushurl) == 0:
             writer.release()
             print('save result to {}'.format(out_path))

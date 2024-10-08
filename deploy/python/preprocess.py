@@ -176,6 +176,7 @@ class Resize(object):
             im_scale_y = im_scale
         else:
             resize_h, resize_w = self.target_size
+            # print(f"TARGET SIZE {self.target_size}")
             im_scale_y = resize_h / float(origin_shape[0])
             im_scale_x = resize_w / float(origin_shape[1])
         return im_scale_y, im_scale_x

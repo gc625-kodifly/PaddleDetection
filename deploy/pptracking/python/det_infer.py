@@ -97,7 +97,8 @@ class Detector(object):
             cpu_threads=1,
             enable_mkldnn=False,
             output_dir='output',
-            threshold=0.5, ):
+            threshold=0.5,
+            dla_core=1):
         self.pred_config = self.set_config(model_dir)
         self.predictor, self.config = load_predictor(
             model_dir,
@@ -111,7 +112,8 @@ class Detector(object):
             trt_opt_shape=trt_opt_shape,
             trt_calib_mode=trt_calib_mode,
             cpu_threads=cpu_threads,
-            enable_mkldnn=enable_mkldnn)
+            enable_mkldnn=enable_mkldnn,
+            dla_core=dla_core)
         self.det_times = Timer()
         self.cpu_mem, self.gpu_mem, self.gpu_util = 0, 0, 0
         self.batch_size = batch_size
@@ -396,7 +398,8 @@ def load_predictor(model_dir,
                    trt_opt_shape=640,
                    trt_calib_mode=False,
                    cpu_threads=1,
-                   enable_mkldnn=False):
+                   enable_mkldnn=False,
+                   dla_core=0):
     """set AnalysisConfig, generate AnalysisPredictor
     Args:
         model_dir (str): root path of __model__ and __params__
@@ -459,12 +462,18 @@ def load_predictor(model_dir,
         'trt_fp16': Config.Precision.Half
     }
     if run_mode in precision_map.keys():
+        print("dla",dla_core,type(dla_core))
+        if dla_core == 0:
+            print(f'Enabling tensorrt_dla with core: {dla_core}')
+            config.enable_tensorrt_dla(dla_core)
+        else:
+            print(f"DLA core: {dla_core}, not enabling dla")
         config.enable_tensorrt_engine(
             workspace_size=1 << 25,
             max_batch_size=batch_size,
             min_subgraph_size=min_subgraph_size,
             precision_mode=precision_map[run_mode],
-            use_static=False,
+            use_static=True,
             use_calib_mode=trt_calib_mode)
 
         if use_dynamic_shape:
@@ -487,7 +496,9 @@ def load_predictor(model_dir,
     config.enable_memory_optim()
     # disable feed, fetch OP, needed by zero_copy_run
     config.switch_use_feed_fetch_ops(False)
+    print('createing pred')
     predictor = create_predictor(config)
+    print('finish pred')
     return predictor, config
 
 

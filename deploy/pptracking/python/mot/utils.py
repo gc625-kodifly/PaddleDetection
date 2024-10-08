@@ -18,7 +18,17 @@ import time
 import numpy as np
 import collections
 import math
+import asyncio
+import websockets
+import json
+import pytz
+from datetime import datetime
 
+
+start_time = time.time()
+elapsed_time = None
+prev_in_count = 0
+prev_out_count = 0
 __all__ = [
     'MOTTimer', 'Detection', 'write_mot_results', 'load_det_results',
     'preprocess_reid', 'get_crops', 'clip_box', 'scale_coords',
@@ -209,6 +219,16 @@ def preprocess_reid(imgs,
     im_batch = np.concatenate(im_batch, 0)
     return im_batch
 
+async def send_counts(cameraid, in_count, out_count, formatted_time,WEBSOCKET_URL):
+    async with websockets.connect(WEBSOCKET_URL) as websocket:
+        
+        message = json.dumps({"message_type":"NEW_PEOPLE_COUNT",
+                              "message": {"camera_label": cameraid, 
+                                          "in_count": in_count, 
+                                          "out_count": out_count, 
+                                          "timestamp": formatted_time}})
+        await websocket.send(message)
+        print("Sent:", message)
 
 def flow_statistic(result,
                    secs_interval,
@@ -224,11 +244,17 @@ def flow_statistic(result,
                    prev_center,
                    records,
                    data_type='mot',
-                   ids2names=['pedestrian']):
+                   ids2names=['pedestrian'],
+                   camera_id=0):
     # Count in/out number: 
     # Note that 'region_type' should be one of ['horizontal', 'vertical', 'custom'],
     # 'horizontal' and 'vertical' means entrance is the center line as the entrance when do_entrance_counting, 
     # 'custom' means entrance is a region defined by users when do_break_in_counting.
+    cameraid=1
+    formatted_time = None
+    hong_kong_tz = pytz.timezone('Asia/Hong_Kong')
+    current_time_hk = datetime.now(hong_kong_tz)
+    formatted_time = current_time_hk.isoformat()
 
     if do_entrance_counting:
         assert region_type in [
@@ -319,6 +345,32 @@ def flow_statistic(result,
     if do_entrance_counting:
         info += ", In count: {}, Out count: {}".format(
             len(in_id_list), len(out_id_list))
+        
+        print("Count-------------",len(in_id_list), len(out_id_list))
+    global start_time
+    global elapsed_time
+    global prev_in_count
+    global prev_out_count
+    elapsed_time = time.time() - start_time
+    
+    cam_value = camera_id
+    
+    
+    # print(f"camera_id {cam_value}")
+    print(f'ELAPSED_TIME {elapsed_time}')
+    if elapsed_time>=30:
+        try:
+            # asyncio.run(send_counts(cam_value , len(in_id_list) - prev_in_count , len(out_id_list) - prev_out_count,formatted_time , WEBSOCKET_URL = "ws://localhost:8765"))
+            asyncio.run(send_counts(cam_value , len(in_id_list) - prev_in_count , len(out_id_list) - prev_out_count,formatted_time , WEBSOCKET_URL = "ws://localhost:8001/ws/broker/producer/1/"))
+        except:
+            pass
+        
+        print("!!!!!!!!!!!!!!!!!!! SENDING !!!!!!!!!!!!!!!!!!!!")
+        prev_in_count = len(in_id_list)
+        prev_out_count = len(out_id_list)
+        start_time = time.time()
+
+
     if do_break_in_counting:
         info += ", Break_in count: {}".format(len(in_id_list))
     if frame_id % video_fps == 0 and frame_id / video_fps % secs_interval == 0:
