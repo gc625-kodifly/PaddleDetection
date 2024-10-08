@@ -757,6 +757,14 @@ class PipePredictor(object):
                     entrance.append(
                         [self.region_polygon[i], self.region_polygon[i + 1]])
                 entrance.append([width, height])
+
+            elif self.region_type == 'custom_line':
+                entrance = []
+                assert len(self.region_polygon) == 4,"custom line only needs 2 pairs of points. x1 y1 x2 y2"
+                for i in range(0, len(self.region_polygon), 2):
+                    entrance.append(
+                        [int(self.region_polygon[i]), int(self.region_polygon[i + 1])])
+
             else:
                 raise ValueError("region_type:{} unsupported.".format(
                     self.region_type))
@@ -1215,7 +1223,8 @@ class PipePredictor(object):
                 illegal_parking_dict=illegal_parking_dict,
                 entrance=entrance,
                 records=records,
-                center_traj=center_traj)
+                center_traj=center_traj,
+                region_type=self.region_type)
 
         human_attr_res = result.get('attr')
         if human_attr_res is not None:

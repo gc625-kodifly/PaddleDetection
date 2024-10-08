@@ -604,7 +604,6 @@ class SDE_Detector(Detector):
                 save_dir = os.path.join(self.output_dir, seq_name)
                 if not os.path.exists(save_dir):
                     os.makedirs(save_dir)
-                    print("SAVING???")
                 cv2.imwrite(
                     os.path.join(save_dir, '{:05d}.jpg'.format(frame_id)), im)
 
@@ -660,6 +659,7 @@ class SDE_Detector(Detector):
                     entrance = [width / 2, 0., width / 2, height]
                 elif self.region_type == 'custom':
                     entrance = []
+        
                     assert len(
                         self.region_polygon
                     ) % 2 == 0, "region_polygon should be pairs of coords points when do break_in counting."
@@ -668,6 +668,21 @@ class SDE_Detector(Detector):
                             self.region_polygon[i], self.region_polygon[i + 1]
                         ])
                     entrance.append([width, height])
+                elif self.region_type == 'custom_line':
+                    entrance = []
+        
+                    assert len(
+                        self.region_polygon
+                    ) == 4, "region_polygon should be 2 pairs of coords points when do break_in counting."
+                    # for i in range(0, len(self.region_polygon), 2):
+                    #     entrance.append(
+                    #         self.region_polygon[i], self.region_polygon[i + 1]
+                    #     )
+
+                    for i in range(len(self.region_polygon)):
+                        print("entrance add ",entrance)
+                        entrance.append(self.region_polygon[i])
+                    # entrance.append([width, height]) 
                 else:
                     raise ValueError("region_type:{} is not supported.".format(
                         self.region_type))

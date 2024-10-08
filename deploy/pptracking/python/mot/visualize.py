@@ -217,7 +217,8 @@ def plot_tracking_dict(image,
                        illegal_parking_dict=None,
                        entrance=None,
                        records=None,
-                       center_traj=None):
+                       center_traj=None,
+                       region_type="vertical"):
     im = np.ascontiguousarray(np.copy(image))
     im_h, im_w = im.shape[:2]
     if do_break_in_counting or do_illegal_parking_recognition:
@@ -239,14 +240,21 @@ def plot_tracking_dict(image,
                 thickness=text_thickness)
 
     if num_classes == 1 and do_entrance_counting:
-        entrance_line = tuple(map(int, entrance))
-        cv2.rectangle(
-            im,
-            entrance_line[0:2],
-            entrance_line[2:4],
-            color=(0, 255, 255),
-            thickness=line_thickness)
-        # find start location for entrance counting data
+        
+        if region_type == "custom_line":
+            print(f"entrance {entrance}")
+            line_start = entrance[0]
+            line_end = entrance[1]
+            cv2.line(im,line_start,line_end,color=(0,255,255),thickness=line_thickness)
+        else:
+            entrance_line = tuple(map(int, entrance))
+            cv2.rectangle(
+                im,
+                entrance_line[0:2],
+                entrance_line[2:4],
+                color=(0, 255, 255),
+                thickness=line_thickness)
+            # find start location for entrance counting data
         start = records[-1].find('In')
         cv2.putText(
             im,
