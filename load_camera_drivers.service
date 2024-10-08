@@ -1,0 +1,11 @@
+[Unit]
+Description=Load Camera Drivers
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/home/kodifly/PaddleDetection/load_camera_drivers.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Exec=/home/kodifly/PaddleDetection/run_count_2.sh
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+Name=PCS camera 2
+Comment=desktop service for cam 2 
