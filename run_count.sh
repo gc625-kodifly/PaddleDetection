@@ -2,7 +2,7 @@
 
 cam=$1
 # cam2=$2
-source /home/kodifly/paddle/test_env/bin/activate
+source /home/kodifly/PaddleDetection/paddle/bin/activate
 
 
 declare -A camera_labels
@@ -38,7 +38,7 @@ pipeline=(
   'nvv4l2camerasrc device=/dev/video'${camera_device[${cam}]}
   '! video/x-raw(memory:NVMM), format=UYVY, width=3840, height=2160, framerate=30/1'
   '! nvvidconv'
-  '! video/x-raw,format=(string)UYVY,width=320, height=180'
+  '! video/x-raw,format=(string)UYVY,width=1280, height=720'
   '! queue'
   '! appsink sync=0 drop=1'
 )
@@ -48,14 +48,17 @@ pipeline=(
 pipeline_string="${pipeline[*]}"
 # --rtsp 'v4l2src device=/dev/video'${camera_device[${cam}]}' ! video/x-raw, format=UYVY, width=3840, height=2160, framerate=30/1, colorimetry=2:4:7:1, interlace-mode=progressive ! appsink sync=0 drop=1' \
 
-python /home/kodifly/paddle/PaddleDetection/deploy/pipeline/pipeline.py \
---config /home/kodifly/paddle/PaddleDetection/deploy/pipeline/config/infer_cfg_jetson${camera_device[${cam}]}.yml \
+python /home/kodifly/PaddleDetection/deploy/pipeline/pipeline.py \
+--config /home/kodifly/PaddleDetection/deploy/pipeline/config/infer_cfg_jetson${camera_device[${cam}]}.yml \
 --rtsp "${pipeline_string}" \
 --device=gpu \
 --run_mode trt_fp16 \
 --camera_label ${camera_labels[${cam}]} \
 --dla_core ${camera_device[${cam}]} \
---do_entrance_counting --region_type=horizontal
+--do_entrance_counting --region_type=horizontal \
+--enable_write_video \
+--write_video_dir /mnt/data
+
 # --do_break_in_counting --region_type=custom --region_polygon \
 # 0 0 600 200 1280 520 1280 720 0 720
 

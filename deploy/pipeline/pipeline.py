@@ -24,6 +24,7 @@ import copy
 import threading
 import queue
 import time
+import datetime
 from collections import defaultdict
 from datacollector import DataCollector, Result
 try:
@@ -34,6 +35,7 @@ except Exception:
 # add deploy path of PaddleDetection to sys.path
 parent_path = os.path.abspath(os.path.join(__file__, *(['..'] * 2)))
 sys.path.insert(0, parent_path)
+
 
 from cfg_utils import argsparser, print_arguments, merge_cfg
 from pipe_utils import PipeTimer
@@ -371,6 +373,26 @@ class PipePredictor(object):
         self.collector = DataCollector()
 
         self.pushurl = args.pushurl
+        
+        self.write_video_dir = args.write_video_dir
+        now = datetime.datetime.now()
+        curr_time = now.strftime("%Y%m%d_%H%M%S")
+        out_video_name = f"{self.camera_label}_{curr_time}"
+        
+        out_file_path = os.path.join(self.write_video_dir,f"{out_video_name}.mp4")
+        
+        self.gst_out_pipeline = (
+            'appsrc ! '
+            'videoconvert ! '
+            'video/x-raw, format=I420 ! '
+            'nvvidconv ! '
+            'video/x-raw(memory:NVMM), format=NV12 ! '
+            'nvv4l2h264enc bitrate=8000000 ! '
+            'h264parse ! '
+            'qtmux ! '
+            f'filesink location={out_file_path}'
+        )
+        self.enable_write_video = args.enable_write_video
 
         # auto download inference model
         get_model_dir(self.cfg)
@@ -670,16 +692,8 @@ class PipePredictor(object):
         # mot
         # mot -> attr
         # mot -> pose -> action
-        pipeline = (
+  
         
-        "v4l2src device=/dev/video2 ! "
-        "video/x-raw, format=UYVY, width=3840, height=2160, framerate=30/1, "
-        # "video/x-raw, format=UYVY, width=1920, height=1080, framerate=30/1, "
-        "colorimetry=2:4:7:1, interlace-mode=progressive ! "
-        # "videoconvert ! "
-        # "video/x-raw, format=BGR ! "
-        "appsink sync=0 drop=1"
-        )
         
         print(f" p: {video_file}")
         capture = cv2.VideoCapture(video_file)
@@ -707,8 +721,12 @@ class PipePredictor(object):
             if not os.path.exists(self.output_dir):
                 os.makedirs(self.output_dir)
             out_path = os.path.join(self.output_dir, video_out_name + ".mp4")
-            fourcc = cv2.VideoWriter_fourcc(* 'mp4v')
-            writer = cv2.VideoWriter(out_path, fourcc, fps, (width, height))
+            # fourcc = cv2.VideoWriter_fourcc(* 'mp4v')
+            # writer = cv2.VideoWriter(out_path, fourcc, fps, (width, height))
+        if self.enable_write_video:
+            writer = cv2.VideoWriter(self.gst_out_pipeline, cv2.CAP_GSTREAMER, 0, fps, (width, height), True)
+
+
 
         frame_id = 0
 
@@ -853,12 +871,15 @@ class PipePredictor(object):
                         if len(self.pushurl) > 0:
                             pushstream.pipe.stdin.write(im.tobytes())
                         else:
-                            # writer.write(im)
+                            
                             # if self.file_name is None:  # use camera_id
          
                             cv2.imshow('Paddle-Pipeline', im)
                             if cv2.waitKey(1) & 0xFF == ord('q'):
                                 break
+                    if self.enable_write_video:
+                        writer.write(im)
+                        
                     continue
 
                 self.pipeline_res.update(mot_res, 'mot')
@@ -1132,15 +1153,17 @@ class PipePredictor(object):
                     cv2.imshow('Paddle-Pipeline', im)
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         break
-            
+            if self.enable_write_video:
+                writer.write(im)
             elapsed_time = time.time() - start_time
             sleep_time = max(0,self.period-elapsed_time)
             # print("sleeptime",sleep_time)
             print(f"LOOP FPS: {1/elapsed_time}")
             time.sleep(sleep_time)
         if self.cfg['visual'] and len(self.pushurl) == 0:
-            writer.release()
             print('save result to {}'.format(out_path))
+        if self.enable_write_video:
+            writer.release()
 
     def visualize_video(self,
                         image_rgb,

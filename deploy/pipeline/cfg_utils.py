@@ -179,6 +179,16 @@ def argsparser():
         type=str,
         default="",
         help="camera name for backend")
+    parser.add_argument(
+        "--enable_write_video",
+        action='store_true',
+        help="Whether to save video or not")
+    parser.add_argument(
+        "--write_video_dir",
+        type=str,
+        default="",
+        help="dir to write video")
+    
     return parser
 
 
