@@ -24,7 +24,8 @@ import copy
 import threading
 import queue
 import time
-import datetime
+from datetime import datetime
+import json, uuid, requests
 from collections import defaultdict
 from datacollector import DataCollector, Result
 try:
@@ -376,7 +377,7 @@ class PipePredictor(object):
         self.pushurl = args.pushurl
         
         self.write_video_dir = args.write_video_dir
-        now = datetime.datetime.now()
+        now = datetime.now()
         curr_time = now.strftime("%Y%m%d_%H%M%S")
         out_video_name = f"{self.camera_label}_{curr_time}"
         
@@ -672,9 +673,35 @@ class PipePredictor(object):
             if self.cfg['visual']:
                 self.visualize_image(batch_file, batch_input, self.pipeline_res)
 
+    def send_disconnected_status_to_server(self):
+        payload = {
+            "id": 1,
+            "equipment": "PCS-CAM-01",
+            "status": False,
+        }
+        DEFAULT_HEADERS = {"Content-Type": "application/json", "Accept": "application/json"}
+
+        REMOTE_SERVER_URL = (
+            "https://pcs-backend.kodifly.com/api/ops/socket-message/"
+        )
+
+        try:
+            message = {
+                "message": payload,
+                "message_id": str(uuid.uuid4()),
+                "message_received_timestamp": datetime.now().isoformat(),
+                "message_type": "EQUIPMENT_STATUS",
+                "sender": "PCS-EDGE-01"
+            }
+            message = json.dumps(message)
+            response = requests.post(REMOTE_SERVER_URL, data=message, headers=DEFAULT_HEADERS)
+            response.raise_for_status()
+            return True
+        except Exception as e:
+            return f"Error: {e}"
+
     def capturevideo(self, capture, queue):
         frame_id = 0
-        
 
         while (1):
             if 0:
@@ -684,6 +711,7 @@ class PipePredictor(object):
             else:
                 ret, frame = capture.read()
                 if not ret:
+                    self.send_disconnected_status_to_server()
                     return
                 # frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 frame_rgb = cv2.cvtColor(frame, cv2.COLOR_YUV2RGB_UYVY)
