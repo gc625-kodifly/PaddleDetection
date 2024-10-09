@@ -246,7 +246,8 @@ def flow_statistic(result,
                    records,
                    data_type='mot',
                    ids2names=['pedestrian'],
-                   camera_id=0):
+                   camera_id=0,
+                   in_direction='s2b'):
     # Count in/out number: 
     # Note that 'region_type' should be one of ['horizontal', 'vertical', 'custom'],
     # 'horizontal' and 'vertical' means entrance is the center line as the entrance when do_entrance_counting, 
@@ -276,10 +277,11 @@ def flow_statistic(result,
                     # horizontal center line
                     if prev_center[track_id][1] <= entrance_y and \
                     center_y > entrance_y:
-                        in_id_list.append(track_id)
+                        
+                        in_id_list.append(track_id) if in_direction == 's2b' else out_id_list.append(track_id)
                     if prev_center[track_id][1] >= entrance_y and \
                     center_y < entrance_y:
-                        out_id_list.append(track_id)
+                        out_id_list.append(track_id) if in_direction == 's2b' else in_id_list.append(track_id)
 
                  
 
@@ -307,12 +309,14 @@ def flow_statistic(result,
                                 #  y_prev <= f(x_prev) to y_=cur > f(x)
                         if prev_y <= m * (prev_x - p1[0]) + p1[1] and \
                         center_y > m * (center_x - p1[0]) + p1[1]:
-                            in_id_list.append(track_id)
+                            # in_id_list.append(track_id)
+                            in_id_list.append(track_id) if in_direction == 's2b' else out_id_list.append(track_id)
                         
-                                    # y_prev >= f(x_prev) to y_now < f(x_now)
+                            # y_prev >= f(x_prev) to y_now < f(x_now)
                         if prev_y >= m * (prev_x - p1[0]) + p1[1] and \
                         center_y < m * (center_x - p1[0]) + p1[1]:
-                            out_id_list.append(track_id)
+                            out_id_list.append(track_id) if in_direction == 's2b' else in_id_list.append(track_id)
+                            # out_id_list.append(track_id)
 
                     elif region_type == 'custom_line_vertical':
                         if not (min(p1[1],p2[1])  < center_y  < max(p1[1],p2[1])):
@@ -321,20 +325,24 @@ def flow_statistic(result,
 
                         if prev_x <= m * (prev_y - p1[1]) + p1[0] and \
                         center_x > m * (center_y - p1[1]) + p1[0]:
-                            in_id_list.append(track_id)
+                            in_id_list.append(track_id) if in_direction == 's2b' else out_id_list.append(track_id)
 
                         if prev_x >= m * (prev_y - p1[1]) + p1[0] and \
                         center_x < m * (center_y - p1[1]) + p1[0]:
-                            out_id_list.append(track_id)
+                            # out_id_list.append(track_id)
+                            out_id_list.append(track_id) if in_direction == 's2b' else in_id_list.append(track_id)
 
                 else:
                     # vertical center line
                     if prev_center[track_id][0] <= entrance_x and \
                     center_x > entrance_x:
-                        in_id_list.append(track_id)
+                        in_id_list.append(track_id) if in_direction == 's2b' else out_id_list.append(track_id)
+                        # in_id_list.append(track_id)
                     if prev_center[track_id][0] >= entrance_x and \
                     center_x < entrance_x:
-                        out_id_list.append(track_id)
+                        out_id_list.append(track_id) if in_direction == 's2b' else in_id_list.append(track_id)
+                        # out_id_list.append(track_id)
+                        
                 prev_center[track_id][0] = center_x
                 prev_center[track_id][1] = center_y
             else:

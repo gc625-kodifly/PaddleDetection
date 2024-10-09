@@ -1,0 +1,16 @@
+[Unit]
+Description=start cam 2 detection
+Requires=load_camera_drivers.service
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/home/kodifly/PaddleDetection/run_count_2.sh
+Restart=always
+User=kodifly
+WorkingDirectory=/home/kodifly/PaddleDetection
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/kodifly/.Xauthority
+
+[Install]
+WantedBy=default.target

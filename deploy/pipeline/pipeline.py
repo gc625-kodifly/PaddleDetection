@@ -365,7 +365,8 @@ class PipePredictor(object):
         
         
         self.camera_label = args.camera_label
-        
+        self.in_direction = args.in_direction
+
         self.warmup_frame = self.cfg['warmup_frame']
         self.pipeline_res = Result()
         self.pipe_timer = PipeTimer()
@@ -851,7 +852,8 @@ class PipePredictor(object):
                     prev_center,
                     records,
                     ids2names=self.mot_predictor.pred_config.labels,
-                    camera_id=self.camera_label)
+                    camera_id=self.camera_label,
+                    in_direction=self.in_direction)
                 records = statistic['records']
 
                 # print(f"flow time {(time.time()-flow_t)}, {1/(time.time()-flow_t)}")

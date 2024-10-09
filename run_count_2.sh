@@ -54,10 +54,11 @@ python /home/kodifly/PaddleDetection/deploy/pipeline/pipeline.py \
 --run_mode trt_fp16 \
 --camera_label ${camera_labels[${cam}]} \
 --dla_core ${camera_device[${cam}]} \
---do_entrance_counting --region_type=custom_line_vertical --region_polygon 500 100 700 500 \
+--do_entrance_counting --region_type=vertical --region_polygon 500 100 700 500 --in_direction s2b \
 --enable_write_video \
 --write_video_dir /mnt/data \
 --draw_center_traj
+
 
 # --do_break_in_counting --region_type=custom --region_polygon \
 # 0 0 600 200 1280 520 1280 720 0 720

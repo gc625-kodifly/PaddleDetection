@@ -188,7 +188,11 @@ def argsparser():
         type=str,
         default="",
         help="dir to write video")
-    
+    parser.add_argument(
+        "--in_direction",
+        type=str,
+        default="",
+        help=" s2b or b2s. which direction is in. default is if coords go from small to big")
     return parser
 
 
