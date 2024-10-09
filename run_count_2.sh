@@ -46,7 +46,6 @@ pipeline=(
 
 # Join the array elements into a single string
 pipeline_string="${pipeline[*]}"
-# --rtsp 'v4l2src device=/dev/video'${camera_device[${cam}]}' ! video/x-raw, format=UYVY, width=3840, height=2160, framerate=30/1, colorimetry=2:4:7:1, interlace-mode=progressive ! appsink sync=0 drop=1' \
 
 python /home/kodifly/PaddleDetection/deploy/pipeline/pipeline.py \
 --config /home/kodifly/PaddleDetection/deploy/pipeline/config/infer_cfg_jetson${camera_device[${cam}]}.yml \
@@ -55,7 +54,7 @@ python /home/kodifly/PaddleDetection/deploy/pipeline/pipeline.py \
 --run_mode trt_fp16 \
 --camera_label ${camera_labels[${cam}]} \
 --dla_core ${camera_device[${cam}]} \
---do_entrance_counting --region_type=horizontal --region_polygon 300 500 1050 200 \
+--do_entrance_counting --region_type=custom_line_vertical --region_polygon 500 100 700 500 \
 --enable_write_video \
 --write_video_dir /mnt/data \
 --draw_center_traj

@@ -668,7 +668,7 @@ class SDE_Detector(Detector):
                             self.region_polygon[i], self.region_polygon[i + 1]
                         ])
                     entrance.append([width, height])
-                elif self.region_type == 'custom_line':
+                elif self.region_type == 'custom_line_horizontal' or self.region_type == 'custom_line_vertical':
                     entrance = []
         
                     assert len(

@@ -259,7 +259,7 @@ def flow_statistic(result,
 
     if do_entrance_counting:
         assert region_type in [
-            'horizontal', 'vertical','custom_line'
+            'horizontal', 'vertical','custom_line_horizontal','custom_line_vertical'
         ], "region_type should be 'horizontal' or 'vertical' or 'custom_line' when do entrance counting."
         entrance_x, entrance_y = entrance[0], entrance[1]
         frame_id, tlwhs, tscores, track_ids = result
@@ -283,7 +283,7 @@ def flow_statistic(result,
 
                  
 
-                elif region_type == 'custom_line':
+                elif 'custom_line' in region_type:
                     
                     p1 = entrance[0]
                     p2 = entrance[1]
@@ -293,29 +293,40 @@ def flow_statistic(result,
                     # print(f"curr {center_x},{center_y}")
 
                     # First check if current center is within the x bounds 
-                    if not (min(p1[0],p2[0])  < center_x  < max(p1[0],p2[0])):
-                        # print("NOT INSIDE X lIne")
-                        break
+
 
                     prev_x, prev_y = prev_center[track_id][0],prev_center[track_id][1]
                     # print('not here')
                     
                     # BELOW LINE TO ABOVE 
-                    m = (p2[1]-p1[1]) / (p2[0] - p1[0])
                     
+                    if region_type == 'custom_line_horizontal':
+                        if not (min(p1[0],p2[0])  < center_x  < max(p1[0],p2[0])):
+                            break
+                        m = (p2[1]-p1[1]) / (p2[0] - p1[0])
                                 #  y_prev <= f(x_prev) to y_=cur > f(x)
-                    if prev_y <= m * (prev_x - p1[0]) + p1[1] and \
-                    center_y > m * (center_x - p1[0]) + p1[1]:
-                        in_id_list.append(track_id)
-                    
-                                # y_prev >= f(x_prev) to y_now < f(x_now)
-                    if prev_y >= m * (prev_x - p1[0]) + p1[1] and \
-                    center_y < m * (center_x - p1[0]) + p1[1]:
-                        out_id_list.append(track_id)
+                        if prev_y <= m * (prev_x - p1[0]) + p1[1] and \
+                        center_y > m * (center_x - p1[0]) + p1[1]:
+                            in_id_list.append(track_id)
+                        
+                                    # y_prev >= f(x_prev) to y_now < f(x_now)
+                        if prev_y >= m * (prev_x - p1[0]) + p1[1] and \
+                        center_y < m * (center_x - p1[0]) + p1[1]:
+                            out_id_list.append(track_id)
 
+                    elif region_type == 'custom_line_vertical':
+                        if not (min(p1[1],p2[1])  < center_y  < max(p1[1],p2[1])):
+                            break
+                        m = (p2[0]-p1[0]) / (p2[1] - p1[1])
 
+                        if prev_x <= m * (prev_y - p1[1]) + p1[0] and \
+                        center_x > m * (center_y - p1[1]) + p1[0]:
+                            in_id_list.append(track_id)
 
-                    
+                        if prev_x >= m * (prev_y - p1[1]) + p1[0] and \
+                        center_x < m * (center_y - p1[1]) + p1[0]:
+                            out_id_list.append(track_id)
+
                 else:
                     # vertical center line
                     if prev_center[track_id][0] <= entrance_x and \

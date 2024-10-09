@@ -241,7 +241,7 @@ def plot_tracking_dict(image,
 
     if num_classes == 1 and do_entrance_counting:
         
-        if region_type == "custom_line":
+        if region_type == "custom_line_vertical" or region_type == "custom_line_horizontal":
             print(f"entrance {entrance}")
             line_start = entrance[0]
             line_end = entrance[1]

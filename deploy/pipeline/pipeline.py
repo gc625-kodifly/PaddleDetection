@@ -758,7 +758,7 @@ class PipePredictor(object):
                         [self.region_polygon[i], self.region_polygon[i + 1]])
                 entrance.append([width, height])
 
-            elif self.region_type == 'custom_line':
+            elif self.region_type == 'custom_line_horizontal' or self.region_type == 'custom_line_vertical':
                 entrance = []
                 assert len(self.region_polygon) == 4,"custom line only needs 2 pairs of points. x1 y1 x2 y2"
                 for i in range(0, len(self.region_polygon), 2):
