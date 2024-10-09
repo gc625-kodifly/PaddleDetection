@@ -1,0 +1,15 @@
+[Unit]
+Description=Check I2C Devices and Report Status
+After=network.target
+
+[Service]
+ExecStart=python3 /home/kodifly/PaddleDetection/check_camera_status.py 1
+Restart=always
+RestartSec=60
+User=kodifly
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target
+

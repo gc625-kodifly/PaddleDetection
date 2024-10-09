@@ -696,8 +696,10 @@ class PipePredictor(object):
             message = json.dumps(message)
             response = requests.post(REMOTE_SERVER_URL, data=message, headers=DEFAULT_HEADERS)
             response.raise_for_status()
+            print("sent message")
             return True
         except Exception as e:
+            print("Error")
             return f"Error: {e}"
 
     def capturevideo(self, capture, queue):
@@ -709,8 +711,12 @@ class PipePredictor(object):
                 time.sleep(0.005)
                 
             else:
+                print('IN CAPTURE')
                 ret, frame = capture.read()
+                print(f'got frame {type(frame)}')
+                print(f'got ret {ret}')
                 if not ret:
+                    print("sending disconnected")
                     self.send_disconnected_status_to_server()
                     return
                 # frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
