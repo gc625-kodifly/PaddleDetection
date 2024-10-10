@@ -301,15 +301,19 @@ def flow_statistic(result,
                     # print('not here')
                     
                     # BELOW LINE TO ABOVE 
+                    print("PREV ", prev_x,prev_y)
+                    print("CURR,", center_x,center_y)
                     
                     if region_type == 'custom_line_horizontal':
                         if not (min(p1[0],p2[0])  < center_x  < max(p1[0],p2[0])):
+                            print("points not in here")
                             break
                         m = (p2[1]-p1[1]) / (p2[0] - p1[0])
                                 #  y_prev <= f(x_prev) to y_=cur > f(x)
                         if prev_y <= m * (prev_x - p1[0]) + p1[1] and \
                         center_y > m * (center_x - p1[0]) + p1[1]:
                             # in_id_list.append(track_id)
+                            print('small y to big y')
                             in_id_list.append(track_id) if in_direction == 's2b' else out_id_list.append(track_id)
                         
                             # y_prev >= f(x_prev) to y_now < f(x_now)
@@ -317,6 +321,7 @@ def flow_statistic(result,
                         center_y < m * (center_x - p1[0]) + p1[1]:
                             out_id_list.append(track_id) if in_direction == 's2b' else in_id_list.append(track_id)
                             # out_id_list.append(track_id)
+                            print('big2smalls')
 
                     elif region_type == 'custom_line_vertical':
                         if not (min(p1[1],p2[1])  < center_y  < max(p1[1],p2[1])):
@@ -415,7 +420,7 @@ def flow_statistic(result,
     
     # print(f"camera_id {cam_value}")
     print(f'ELAPSED_TIME {elapsed_time}')
-    if elapsed_time>=30:
+    if elapsed_time>=5:
         try:
             # asyncio.run(send_counts(cam_value , len(in_id_list) - prev_in_count , len(out_id_list) - prev_out_count,formatted_time , WEBSOCKET_URL = "ws://localhost:8765"))
             asyncio.run(send_counts(cam_value , len(in_id_list) - prev_in_count , len(out_id_list) - prev_out_count,formatted_time , WEBSOCKET_URL = "ws://localhost:8001/ws/broker/producer/1/"))
