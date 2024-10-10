@@ -673,20 +673,30 @@ class PipePredictor(object):
             if self.cfg['visual']:
                 self.visualize_image(batch_file, batch_input, self.pipeline_res)
 
-    def capturevideo(self, capture, queue):
+    def capturevideo(self, queue,video_file):
         frame_id = 0
 
         while (1):
-            if 0:
-            # if queue.full():
-                time.sleep(0.005)
+            # if 0:
+            # # if queue.full():
+            #     time.sleep(0.005)
                 
-            else:
-                ret, frame = capture.read()
-                if not ret:
-                    return
-                frame_rgb = cv2.cvtColor(frame, cv2.COLOR_YUV2RGB_UYVY)
-                queue.put(frame_rgb)
+        
+            # print("@@@@@@@@ BEFORE CAPTURE")
+            ret, frame = self.capture.read()
+            # print("@@@@@@@@ CAPTURING DONE")
+            if not ret:
+                self.capture.release()
+                self.capture = cv2.VideoCapture(video_file)
+                print('@@@@@@@@@@@@@@@@@@@ NO RET @@@@@@@@@@@@@@@@@@@')
+                continue
+            
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_YUV2RGB_UYVY)
+            # print('@@@@@@@@@@@@@@@@@@@ frame rgb @@@@@@@@@@@@@@@@@@@')
+            
+            queue.put(frame_rgb)
+            # print('@@@@@@@@@@@@@@@@@@@ frame in q @@@@@@@@@@@@@@@@@@@')
+            
 
     def predict_video(self, video_file, thread_idx=0):
         # mot
@@ -696,13 +706,13 @@ class PipePredictor(object):
         
         
         print(f" p: {video_file}")
-        capture = cv2.VideoCapture(video_file)
+        self.capture = cv2.VideoCapture(video_file)
 
         # Get Video info : resolution, fps, frame count
-        width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        fps = int(capture.get(cv2.CAP_PROP_FPS))
-        frame_count = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
+        width = int(self.capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(self.capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        fps = int(self.capture.get(cv2.CAP_PROP_FPS))
+        frame_count = int(self.capture.get(cv2.CAP_PROP_FRAME_COUNT))
         print("video fps: %d, frame_count: %d" % (fps, frame_count))
         print(f'w {width} h {height}')
         if len(self.pushurl) > 0:
@@ -785,7 +795,7 @@ class PipePredictor(object):
         framequeue = queue.Queue(maxsize=1)
         
         thread = threading.Thread(
-            target=self.capturevideo, args=(capture, framequeue))
+            target=self.capturevideo, args=[framequeue,video_file])
         thread.start()
         time.sleep(1)
 
@@ -794,7 +804,7 @@ class PipePredictor(object):
         # while (not framequeue.empty()):
         while True:
             start_time = time.time()
-            # print("q",(framequeue.qsize()))
+            # print("!!!!! IN LOOP")
             if frame_id % 10 == 0:
                 print('Thread: {}; frame id: {}'.format(thread_idx, frame_id))
 
@@ -811,6 +821,7 @@ class PipePredictor(object):
                 if mot_skip_frame_num > 1 and frame_id > 0 and frame_id % mot_skip_frame_num > 0:
                     reuse_det_result = True
                 # det_t = time.time()
+                # print("+++++++ BEFORE PREDICTOR")
                 res = self.mot_predictor.predict_image(
                     [copy.deepcopy(frame_rgb)],
                     visual=False,
@@ -819,6 +830,7 @@ class PipePredictor(object):
                 # print(f"det t and f {time.time()-det_t}, {1/(time.time()-det_t)}")
                 # mot output format: id, class, score, xmin, ymin, xmax, ymax
                 # mot_t = time.time()
+                # print("+++++++ BEFORE PARSE MOT")
                 mot_res = parse_mot_res(res)
                 # print(f"mot t and f {time.time()-mot_t}, {1/(time.time()-mot_t)}")
                 
@@ -836,6 +848,7 @@ class PipePredictor(object):
                 mot_result = (frame_id + 1, boxes[0], scores[0],
                               ids[0])  # single class
                 # flow_t = time.time()
+                # print("+++++++ BEFORE FLOW STAT")
                 statistic = flow_statistic(
                     mot_result,
                     self.secs_interval,
@@ -886,8 +899,8 @@ class PipePredictor(object):
                             cv2.imshow(f'{self.camera_label}', im)
                             if cv2.waitKey(1) & 0xFF == ord('q'):
                                 break
-                    if self.enable_write_video:
-                        writer.write(im)
+                        if self.enable_write_video:
+                            writer.write(im)
                         
                     continue
 
@@ -1162,8 +1175,8 @@ class PipePredictor(object):
                     cv2.imshow(f'{self.camera_label}', im)
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         break
-            if self.enable_write_video:
-                writer.write(im)
+                if self.enable_write_video:
+                    writer.write(im)
             elapsed_time = time.time() - start_time
             sleep_time = max(0,self.period-elapsed_time)
             # print("sleeptime",sleep_time)
