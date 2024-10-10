@@ -301,8 +301,8 @@ def flow_statistic(result,
                     # print('not here')
                     
                     # BELOW LINE TO ABOVE 
-                    print("PREV ", prev_x,prev_y)
-                    print("CURR,", center_x,center_y)
+                    # print("PREV ", prev_x,prev_y)
+                    # print("CURR,", center_x,center_y)
                     
                     if region_type == 'custom_line_horizontal':
                         if not (min(p1[0],p2[0])  < center_x  < max(p1[0],p2[0])):
@@ -419,7 +419,7 @@ def flow_statistic(result,
     
     
     # print(f"camera_id {cam_value}")
-    print(f'ELAPSED_TIME {elapsed_time}')
+    # print(f'ELAPSED_TIME {elapsed_time}')
     if elapsed_time>=5:
         try:
             # asyncio.run(send_counts(cam_value , len(in_id_list) - prev_in_count , len(out_id_list) - prev_out_count,formatted_time , WEBSOCKET_URL = "ws://localhost:8765"))
@@ -427,7 +427,7 @@ def flow_statistic(result,
         except:
             pass
         
-        print("!!!!!!!!!!!!!!!!!!! SENDING !!!!!!!!!!!!!!!!!!!!")
+        # print("!!!!!!!!!!!!!!!!!!! SENDING !!!!!!!!!!!!!!!!!!!!")
         prev_in_count = len(in_id_list)
         prev_out_count = len(out_id_list)
         start_time = time.time()

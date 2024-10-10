@@ -680,7 +680,7 @@ class SDE_Detector(Detector):
                     #     )
 
                     for i in range(len(self.region_polygon)):
-                        print("entrance add ",entrance)
+                        # print("entrance add ",entrance)
                         entrance.append(self.region_polygon[i])
                     # entrance.append([width, height]) 
                 else:

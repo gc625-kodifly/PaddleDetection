@@ -899,8 +899,15 @@ class PipePredictor(object):
                             cv2.imshow(f'{self.camera_label}', im)
                             if cv2.waitKey(1) & 0xFF == ord('q'):
                                 break
-                        if self.enable_write_video:
-                            writer.write(im)
+                    if self.enable_write_video:
+                        _, _, fps = self.pipe_timer.get_total_time()
+
+                        im = self.visualize_video(frame_rgb, self.pipeline_res,
+                                                self.collector, frame_id, fps,
+                                                entrance, records, center_traj,
+                                                self.illegal_parking_time != -1,
+                                                illegal_parking_dict)  # visualize
+                        writer.write(im)
                         
                     continue
 
@@ -1175,8 +1182,15 @@ class PipePredictor(object):
                     cv2.imshow(f'{self.camera_label}', im)
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         break
-                if self.enable_write_video:
-                    writer.write(im)
+            if self.enable_write_video:
+                _, _, fps = self.pipe_timer.get_total_time()
+
+                im = self.visualize_video(frame_rgb, self.pipeline_res,
+                                        self.collector, frame_id, fps,
+                                        entrance, records, center_traj,
+                                        self.illegal_parking_time != -1,
+                                        illegal_parking_dict)  # visualize
+                writer.write(im)
             elapsed_time = time.time() - start_time
             sleep_time = max(0,self.period-elapsed_time)
             # print("sleeptime",sleep_time)
