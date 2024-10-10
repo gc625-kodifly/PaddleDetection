@@ -1,12 +1,12 @@
 #!/bin/bash
 
-cam=0
+cam=$1
 # cam2=$2
 source /home/kodifly/PaddleDetection/paddle/bin/activate
 
 
 declare -A camera_labels
-camera_labels[0]=PCS-CAM-01
+camera_labels[0]=PCS-CAM-TEST
 camera_labels[1]=PCS-CAM-02
 camera_labels[2]=PCS-CAM-03
 camera_labels[3]=PCS-CAM-04
@@ -37,8 +37,8 @@ export LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libgomp.so.1:/usr/lib/aarch64-linux
 pipeline=(
   'nvv4l2camerasrc device=/dev/video'${camera_device[${cam}]}
   '! video/x-raw(memory:NVMM), format=UYVY, width=3840, height=2160, framerate=30/1'
-  '! nvvidconv top=720 bottom=2160 right=3840 left=1280'
-  '! video/x-raw,format=(string)UYVY,width=1280, height=720'
+  '! nvvidconv'
+  '! video/x-raw,format=(string)UYVY,width=1920, height=1080'
   '! queue'
   '! appsink sync=0 drop=1'
 )
@@ -47,17 +47,18 @@ pipeline=(
 # Join the array elements into a single string
 pipeline_string="${pipeline[*]}"
 # --rtsp 'v4l2src device=/dev/video'${camera_device[${cam}]}' ! video/x-raw, format=UYVY, width=3840, height=2160, framerate=30/1, colorimetry=2:4:7:1, interlace-mode=progressive ! appsink sync=0 drop=1' \
+# --rtsp "${pipeline_string}" \
 
-python /home/kodifly/PaddleDetection/deploy/pipeline/pipeline.py \
+python /home/kodifly/PaddleDetection/deploy/pipeline/pipeline_haider.py \
 --config /home/kodifly/PaddleDetection/deploy/pipeline/config/infer_cfg_jetson${camera_device[${cam}]}.yml \
---rtsp "${pipeline_string}" \
+--video_file "/home/kodifly/Downloads/14-18-57.mp4" \
 --device=gpu \
 --run_mode trt_fp16 \
 --camera_label ${camera_labels[${cam}]} \
 --dla_core ${camera_device[${cam}]} \
---do_entrance_counting --region_type=custom_line_vertical --region_polygon 525 0 880 720 --in_direction b2s \
+--do_entrance_counting --region_type=horizontal --region_polygon 300 500 1050 200 \
 --enable_write_video \
---write_video_dir /mnt/data/uat \
+--write_video_dir /mnt/data \
 --draw_center_traj
 
 # --do_break_in_counting --region_type=custom --region_polygon \

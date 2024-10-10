@@ -683,9 +683,8 @@ class PipePredictor(object):
                 
             else:
                 ret, frame = capture.read()
-                if not ret:
-                    return
-                frame_rgb = cv2.cvtColor(frame, cv2.COLOR_YUV2RGB_UYVY)
+                frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                #frame_rgb = cv2.cvtColor(frame, cv2.COLOR_YUV2RGB_UYVY)
                 queue.put(frame_rgb)
 
     def predict_video(self, video_file, thread_idx=0):
@@ -851,7 +850,7 @@ class PipePredictor(object):
                     prev_center,
                     records,
                     ids2names=self.mot_predictor.pred_config.labels,
-                    camera_id=self.camera_label,
+                    camera_id="PCS-CAM-TEST",
                     in_direction=self.in_direction)
                 records = statistic['records']
 

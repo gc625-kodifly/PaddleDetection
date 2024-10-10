@@ -37,8 +37,8 @@ export LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libgomp.so.1:/usr/lib/aarch64-linux
 pipeline=(
   'nvv4l2camerasrc device=/dev/video'${camera_device[${cam}]}
   '! video/x-raw(memory:NVMM), format=UYVY, width=3840, height=2160, framerate=30/1'
-  '! nvvidconv'
-  '! video/x-raw,format=(string)UYVY,width=1920, height=1080'
+  '! nvvidconv top=270 bottom=2160 left=0 right=3360'
+  '! video/x-raw,format=(string)UYVY,width=1280, height=720'
   '! queue'
   '! appsink sync=0 drop=1'
 )
@@ -55,9 +55,9 @@ python /home/kodifly/PaddleDetection/deploy/pipeline/pipeline.py \
 --run_mode trt_fp16 \
 --camera_label ${camera_labels[${cam}]} \
 --dla_core ${camera_device[${cam}]} \
---do_entrance_counting --region_type=horizontal --region_polygon 300 500 1050 200 \
+--do_entrance_counting --region_type=custom_line_horizontal --region_polygon 180 720 770 150 --in_direction s2b \
 --enable_write_video \
---write_video_dir /mnt/data \
+--write_video_dir /mnt/data/uat \
 --draw_center_traj
 
 # --do_break_in_counting --region_type=custom --region_polygon \
