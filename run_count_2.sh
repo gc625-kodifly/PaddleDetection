@@ -38,7 +38,7 @@ pipeline=(
   'nvv4l2camerasrc device=/dev/video'${camera_device[${cam}]}
   '! video/x-raw(memory:NVMM), format=UYVY, width=3840, height=2160, framerate=30/1'
   '! nvvidconv'
-  '! video/x-raw,format=(string)UYVY,width=1920, height=1080'
+  '! video/x-raw,format=(string)UYVY,width=1280, height=720'
   '! queue'
   '! appsink sync=0 drop=1'
 )
@@ -54,10 +54,10 @@ python /home/kodifly/PaddleDetection/deploy/pipeline/pipeline.py \
 --run_mode trt_fp16 \
 --camera_label ${camera_labels[${cam}]} \
 --dla_core ${camera_device[${cam}]} \
---do_entrance_counting --region_type=vertical --region_polygon 500 100 700 500 --in_direction s2b \
+--do_entrance_counting --region_type=vertical --region_polygon 680 180 760 720 --in_direction b2s \
+--draw_center_traj \
 --enable_write_video \
---write_video_dir /mnt/data \
---draw_center_traj
+--write_video_dir /mnt/data/uat \
 
 
 # --do_break_in_counting --region_type=custom --region_polygon \
