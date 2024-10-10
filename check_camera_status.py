@@ -2,7 +2,7 @@ import smbus2
 import argparse
 import json, uuid, requests
 from datetime import datetime
-
+import subprocess
 def send__status_to_server(status,cam_label,edge_id):
     payload = {
         "id": 1,
@@ -47,13 +47,27 @@ orin_1_addresses = {
 
 
 orin_2_addresses = {
-    'PCS-CAM-03': 0x42, # IDK YET
-    'PCS-CAM-04': 0x44, # IDK YET
-    'PCS-CAM-05': 0x44, # IDK YET
+    'PCS-CAM-03': (30,0x60), # IDK YET
+    'PCS-CAM-04': (30,0x62), # IDK YET
+    'PCS-CAM-05': (31,0x60) # IDK YET
 }
 
 
+def check_i2c_camera(i2c_bus, address):
+    # Build the i2ctransfer command
+    command = ['i2ctransfer', '-f', '-y', str(i2c_bus), f'w2@0x{address:02X}', '0x05', '0x5f', 'r1']
+    
+    try:
+        # Run the command using subprocess
+        result = subprocess.run(command, capture_output=True, text=True, check=True)
 
+        # Print the result and return True if the camera is connected
+        print(f"Output of i2ctransfer: {result.stdout}")
+        return True
+    except subprocess.CalledProcessError as e:
+        # Handle the case where the command fails
+        print(f"Failed to communicate with device at address 0x{address:02X}: {e}")
+        return False
 
 
 
@@ -75,13 +89,25 @@ def main(device_id):
     cur_addresses = orin_1_addresses if device_id == 1 else orin_2_addresses
 
     for cam_label,address in cur_addresses.items():
-        if check_i2c_device(bus,address):
-            print(f"camera {cam_label} connected at address 0x{address:02X}")
-            send__status_to_server(True,cam_label,device_id)
+        
+        if device_id == 2:
+            if check_i2c_camera(address[0],address[1]):
+                print(f"camera {cam_label} connected at address 0x{address[1]:02X}")
+                send__status_to_server(True,cam_label,device_id)
+            else:
+                print(f"camera {cam_label} disconnected at address 0x{address[1]:02X}")
+                send__status_to_server(False,cam_label,device_id)
+            
         else:
-            print(f"camera {cam_label} disconnected at address 0x{address:02X}")
-            send__status_to_server(False,cam_label,device_id)
+            if check_i2c_device(bus,address):
+                print(f"camera {cam_label} connected at address 0x{address:02X}")
+                send__status_to_server(True,cam_label,device_id)
+            else:
+                print(f"camera {cam_label} disconnected at address 0x{address:02X}")
+                send__status_to_server(False,cam_label,device_id)
     # Close the bus when done
+    
+        print("="*20)
     bus.close()
 
 if __name__ == "__main__":
